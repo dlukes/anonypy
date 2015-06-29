@@ -1,14 +1,55 @@
 #!/usr/bin/env python3
 
-"""Module docstring.
+
+"""Anonymize wav files according to codes in trs transcript.
 
 """
 
+
 import sys
 import argparse
+import io
+
+import re
+
+
+class Anonymizer:
+    """An anonymizing session.
+
+    """
+
+
+    def __init__(self, enc):
+        """enc is the encoding assumed for the input trs files.
+
+        """
+        self.encoding = enc
+
+    def anonymize(self, wav_file, trs_file):
+        pass
+
+    def anon_timespans(self, trs_file):
+        """Extract pairs of Sync time attrs corresponding to anonymized spans.
+
+        An anonymized entry is such that its text contains only NP, NN, NJ, NM
+        or NO.
+        """
+        anon = []
+        with io.open(trs_file, encoding = self.encoding) as fh:
+            lines = fh.read().splitlines()
+            for i, line in enumerate(lines):
+                print(line.strip())
+                if re.match("^N[PNJMO]$", line.strip()):
+                    start = float(re.search("([\d\.]+)", lines[i-1]).group(1))
+                    end = float(re.search("([\d\.]+)", lines[i+1]).group(1))
+                    anon.append({"start": start,
+                                 "text": line,
+                                 "end": end})
+        return anon
 
 
 def process_command_line(argv):
+
     """Return args list. `argv` is a list of arguments, or `None` for
     ``sys.argv[1:]``.
 
