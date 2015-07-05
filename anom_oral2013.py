@@ -3,16 +3,15 @@
 
 import os
 import sys
+import argparse
+# import multiprocessing as mp
+
+sys.path.append("/cnk/users/home/lukes/.local/lib/python3.4/site-packages")
 
 import re
 import numpy as np
 from lxml import etree
-import multiprocessing as mp
 import scipy.io.wavfile as scwav
-
-
-ANON_SIN_FREQ = 440
-ARGS = {}
 
 
 def doc_generator(vert_file):
@@ -28,7 +27,7 @@ def doc_generator(vert_file):
                 doc = ""
 
 
-def anonymize(doc_root, wav_dir, sin_freq = ANON_SIN_FREQ):
+def anonymize(doc_root, wav_dir, sin_freq = 440):
     """Anonymize recording corresponding to doc id.
 
     """
@@ -60,12 +59,12 @@ def anonymize(doc_root, wav_dir, sin_freq = ANON_SIN_FREQ):
             samples[start:end+1] = sin.astype(np.int16)
     return fs, samples
 
-# Closes over global ARGS.
-def process(doc):
+
+def process(doc, args):
     id = doc.attrib["id"]
-    out_file = os.path.join(ARGS["out_dir"], id + ".wav")
+    out_file = os.path.join(args.output_dir, id + ".wav")
     if not os.path.isfile(out_file):
-        fs, samples = anonymize(doc, ARGS["wav_dir"])
+        fs, samples = anonymize(doc, args.input_dir, args.freq)
         scwav.write(out_file, fs, samples)
         sys.stderr.write("Saved {}.\n".format(out_file))
         return 0
@@ -81,22 +80,36 @@ def process(doc):
 
 def parse_invocation(argv):
     if argv is None:
-       argv = sys.argv
-    args = {"vertikala": argv[1],
-            "wav_dir": argv[2],
-            "out_dir": argv[3]}
-    return args
+       argv = sys.argv[1:]
+    parser = argparse.ArgumentParser(description = """
+Anonymize spoken corpus recordings in WAV format based on
+timestamps in corpus vertical.
+""")
+    parser.add_argument("vertical", help = """
+a spoken corpus with timestamps for each segment, in vertical format 
+""")
+    parser.add_argument("-i", "--input-dir", help = """
+path to directory containing input WAV files
+""", required = True)
+    parser.add_argument("-o", "--output-dir", help = """
+path to directory where output WAV files will be saved
+""", required = True)
+    parser.add_argument("-f", "--freq", help = """
+frequency of sine wave (in Hz) to replace anonymized segments; default
+is 440 Hz
+""", type = int, default = 440)
+    return parser.parse_args(argv)
 
 
 def main(argv = None):
-    global ARGS
-    ARGS = parse_invocation(argv)
-    # for doc in doc_generator(ARGS["vertikala"]):
-    #     process(doc, ARGS)
-    pool = mp.Pool(4)
-    results = [pool.apply_async(process, args = (doc,))
-               for doc in doc_generator(ARGS["vertikala"])]
-    results = [result.get() for result in results]
+    args = parse_invocation(argv)
+    results = []
+    for doc in doc_generator(args.vertical):
+        results.append(process(doc, args))
+    # pool = mp.Pool(4)
+    # results = [pool.apply_async(process, args = (doc,))
+    #            for doc in doc_generator(args.vertical)]
+    # results = [result.get() for result in results]
     if any(results):
         sys.stderr.write("There were some errors.\n")
         return 1
