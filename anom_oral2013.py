@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/cnk/users/home/lukes/.linuxbrew/bin/python3
 
 
 import os
@@ -53,7 +53,8 @@ def anonymize(doc_root, wav_dir, sin_freq = 440):
     for seg in doc_root.xpath("//seg"):
         if is_anom_seg(seg):
             start = time2samples(seg.attrib["start"], fs)
-            end = time2samples(seg.attrib["end"], fs)
+            end = min(time2samples(seg.attrib["end"], fs),
+                      len(samples) - 1)
             peak = equiv_sine_peak(samples[start:end+1])
             sin = gen_sin(end + 1 - start, sin_freq, fs) * peak
             samples[start:end+1] = sin.astype(np.int16)
@@ -86,7 +87,7 @@ Anonymize spoken corpus recordings in WAV format based on
 timestamps in corpus vertical.
 """)
     parser.add_argument("vertical", help = """
-a spoken corpus with timestamps for each segment, in vertical format 
+a spoken corpus with timestamps for each segment, in vertical format
 """)
     parser.add_argument("-i", "--input-dir", help = """
 path to directory containing input WAV files
@@ -111,8 +112,9 @@ def main(argv = None):
     #            for doc in doc_generator(args.vertical)]
     # results = [result.get() for result in results]
     if any(results):
-        sys.stderr.write("There were some errors.\n")
-        return 1
+        sys.stderr.write("WARNING: Some already existing files were not"
+                         " overwritten.\n")
+        return 0
     else:
         return 0
 
