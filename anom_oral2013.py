@@ -1,6 +1,5 @@
 #!/cnk/users/home/lukes/.linuxbrew/bin/python3
 
-
 import os
 import sys
 import argparse
@@ -27,7 +26,7 @@ def doc_generator(vert_file):
                 doc = ""
 
 
-def anonymize(doc_root, wav_dir, sin_freq = 440):
+def anonymize(doc_root, wav_dir, sin_freq=440):
     """Anonymize recording corresponding to doc id.
 
     """
@@ -40,11 +39,11 @@ def anonymize(doc_root, wav_dir, sin_freq = 440):
 
     def equiv_sine_peak(num_array):
         rms = np.sqrt(np.mean(np.square(num_array.astype(int))))
-        return rms*np.sqrt(2)
+        return rms * np.sqrt(2)
 
     def gen_sin(length, freq, fs):
         step = freq / fs * 2 * np.pi
-        x = np.arange(0, length, dtype = float) * step
+        x = np.arange(0, length, dtype=float) * step
         return np.sin(x)
 
     id = doc_root.attrib["id"]
@@ -55,9 +54,9 @@ def anonymize(doc_root, wav_dir, sin_freq = 440):
             start = time2samples(seg.attrib["start"], fs)
             end = min(time2samples(seg.attrib["end"], fs),
                       len(samples) - 1)
-            peak = equiv_sine_peak(samples[start:end+1])
+            peak = equiv_sine_peak(samples[start:end + 1])
             sin = gen_sin(end + 1 - start, sin_freq, fs) * peak
-            samples[start:end+1] = sin.astype(np.int16)
+            samples[start:end + 1] = sin.astype(np.int16)
     return fs, samples
 
 
@@ -81,28 +80,28 @@ def process(doc, args):
 
 def parse_invocation(argv):
     if argv is None:
-       argv = sys.argv[1:]
-    parser = argparse.ArgumentParser(description = """
+        argv = sys.argv[1:]
+    parser = argparse.ArgumentParser(description="""
 Anonymize spoken corpus recordings in WAV format based on
 timestamps in corpus vertical.
 """)
-    parser.add_argument("vertical", help = """
+    parser.add_argument("vertical", help="""
 a spoken corpus with timestamps for each segment, in vertical format
 """)
-    parser.add_argument("-i", "--input-dir", help = """
+    parser.add_argument("-i", "--input-dir", help="""
 path to directory containing input WAV files
-""", required = True)
-    parser.add_argument("-o", "--output-dir", help = """
+""", required=True)
+    parser.add_argument("-o", "--output-dir", help="""
 path to directory where output WAV files will be saved
-""", required = True)
-    parser.add_argument("-f", "--freq", help = """
+""", required=True)
+    parser.add_argument("-f", "--freq", help="""
 frequency of sine wave (in Hz) to replace anonymized segments; default
 is 440 Hz
-""", type = int, default = 440)
+""", type=int, default=440)
     return parser.parse_args(argv)
 
 
-def main(argv = None):
+def main(argv=None):
     args = parse_invocation(argv)
     results = []
     for doc in doc_generator(args.vertical):
