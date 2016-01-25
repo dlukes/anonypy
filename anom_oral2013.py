@@ -14,8 +14,9 @@ import scipy.io.wavfile as scwav
 
 
 class Transcript():
-    """A wrapper offering a shared interface to vertical and trs transcripts."""
+    """A wrapper offering a shared interface to vertical and trs transcripts.
 
+    """
     def __init__(self, doc_root, trs=False, id=None):
         self.root = doc_root
         self.trs = trs
