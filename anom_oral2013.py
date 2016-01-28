@@ -93,6 +93,11 @@ def anonymize(doc, wav_dir, sin_freq=440):
 
     wav_file = os.path.join(wav_dir, doc.id + ".wav")
     fs, samples = scwav.read(wav_file)
+    dtype = samples.dtype
+    channels = samples.shape[1]
+    if channels > 1:
+        sys.stderr.write(
+            "{} is not mono ({} channels).\n".format(wav_file, channels))
     for seg in doc.segs():
         if doc.is_anom_seg(seg):
             start = time2samples(doc.seg_start(seg), fs)
@@ -100,7 +105,9 @@ def anonymize(doc, wav_dir, sin_freq=440):
                       len(samples) - 1)
             peak = equiv_sine_peak(samples[start:end + 1])
             sin = gen_sin(end + 1 - start, sin_freq, fs) * peak
-            samples[start:end + 1] = sin.astype(np.int16)
+            sin = sin.astype(dtype)
+            for i in range(channels):
+                samples[start:end + 1, i] = sin
     return fs, samples
 
 
