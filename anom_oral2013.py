@@ -52,13 +52,16 @@ class Transcript:
             return seg.attrib["end"]
 
 
-def doc_generator(input, trs=False):
+def doc_generator(args):
     """Yield input vertical or trs one doc (as parsed XML) at a time."""
-    with open(input) as fh:
-        if trs:
-            root = etree.parse(input).getroot()
-            id, _ = os.path.splitext(os.path.basename(input))
-            yield Transcript(root, trs, id)
+    with open(args.input) as fh:
+        if args.trs:
+            for line in fh:
+                doc_id = line.strip()
+                trs = os.path.join(args.input_dir, f"{doc_id}.trs")
+                root = etree.parse(trs).getroot()
+                id, _ = os.path.splitext(doc_id)
+                yield Transcript(root, args.trs, id)
         else:
             doc = ""
             for line in fh:
@@ -134,7 +137,9 @@ timestamps in corpus vertical.
         "input",
         help="""
 a spoken corpus with timestamps for each segment, in vertical format;
-alternatively, a .trs file (see option --trs)
+alternatively, a text file with document IDs (one per line) which will
+be interpreted as .trs transcription file base names relative to
+INPUT_DIR (see option --trs)
 """,
     )
     parser.add_argument(
@@ -177,7 +182,7 @@ consider input to be .trs instead of vertical
 def main(argv=None):
     args = parse_invocation(argv)
     results = []
-    for doc in doc_generator(args.input, args.trs):
+    for doc in doc_generator(args):
         results.append(process(doc, args))
     if any(results):
         sys.stderr.write(
