@@ -89,6 +89,9 @@ def anonymize(doc, wav_dir, sin_freq=440):
 
     wav_file = os.path.join(wav_dir, doc.id + ".wav")
     fs, samples = scwav.read(wav_file)
+    # Restore old SciPy behavior of returning an array of shape (Nsamples, Nchannels)
+    # even for mono sounds, expected by rest of code.
+    samples = samples[:, None] if samples.ndim == 1 else samples
     dtype = samples.dtype
     channels = samples.shape[1]
     if channels > 1:
